@@ -8,7 +8,7 @@ FORMCLASS = uic.loadUiType(DIR)[0]
 
 
 class ProjectWindowButton(QtWidgets.QWidget, FORMCLASS):
-    def __init__(self):
+    def __init__(self, main, project):
         super(ProjectWindowButton, self).__init__()
         self.setupUi(self)
         self.setting_button.setEnabled(True)
@@ -19,6 +19,8 @@ class ProjectWindowButton(QtWidgets.QWidget, FORMCLASS):
         self.load_button.clicked.connect(self.on_load_button)
         self.start_button.clicked.connect(self.on_start_button)
 
+        self._main = main
+        self._project = project
 
     def on_setting_button(self):
         pass
@@ -27,9 +29,9 @@ class ProjectWindowButton(QtWidgets.QWidget, FORMCLASS):
         pass
 
     def on_start_button(self):
-        _main = MainWindow()
-        _main.setupUi()
-        _main.show()
+        self._main.show()
+        # self._project.close()
+        
         
 
     

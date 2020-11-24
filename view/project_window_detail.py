@@ -9,11 +9,11 @@ FORMCLASS = uic.loadUiType(DIR)[0]
 
 
 class ProjectWindowDetail(QtWidgets.QWidget, FORMCLASS):
-    def __init__(self):
+    def __init__(self, main, project):
         super(ProjectWindowDetail, self).__init__()
         self.setupUi(self)
         
-        self.button = ProjectWindowButton()
+        self.button = ProjectWindowButton(main, project)
         self.project_button_layout.addWidget(self.button)
 
         self.cur_path = os.path.dirname(os.path.abspath(__file__))
@@ -23,6 +23,6 @@ class ProjectWindowDetail(QtWidgets.QWidget, FORMCLASS):
         self.logo_image.setPixmap(
             QtGui.QPixmap(
                 os.path.join(
-                        self.main_folder_path, 'assets/mask.png')).scaled(30,30,Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                        self.main_folder_path, 'assets/mask.png')).scaled(700,700,Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.logo_image.setAlignment(Qt.AlignHCenter)
         self.logo_layout.addWidget(self.logo_image)
