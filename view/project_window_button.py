@@ -1,8 +1,17 @@
 from PyQt5 import uic, QtWidgets
 import os
+import sys
+
 from view.main_window import MainWindow
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+
 DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/ui/ProjectWindow_buttons.ui"
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+# from yolov5_pipeline.detect import detect
+
 
 FORMCLASS = uic.loadUiType(DIR)[0]
 
