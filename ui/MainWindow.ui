@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1119</width>
+    <height>767</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout_3"/>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1119</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuLog_Information">
+    <property name="title">
+     <string>Log Information</string>
+    </property>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuSetting_Info">
+    <property name="title">
+     <string>Setting Info</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuChange_Data_Type">
+    <property name="title">
+     <string>Change Data Type</string>
+    </property>
+   </widget>
+   <addaction name="menuLog_Information"/>
+   <addaction name="menuSetting_Info"/>
+   <addaction name="menuChange_Data_Type"/>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
