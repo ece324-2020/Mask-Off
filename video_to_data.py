@@ -89,7 +89,7 @@ def Video_to_pic(pre_path = "", input_channel = 0,freq = 10,offsets = [0,0,0,0],
                 elif fwidth>fheight:
                     adding = (fwidth - fheight)//2
                     top = int(max((top-adding),0))
-                    bot = int((min(bot+adding),dim[0]))
+                    bot = int(min((bot+adding),dim[0]))
                 
                 #Draw box
                 frame = cv2.rectangle(frame,(left,bot),(right,top),(0,0,255),2)
