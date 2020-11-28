@@ -57,7 +57,7 @@ def Video_to_pic(pre_path = "", input_channel = 0,freq = 10,offsets = [0,0,0,0],
     frame_cnt = 0
     im_cnt = 0
     
-    video = cv2.VideoCapture(1)
+    video = cv2.VideoCapture(input_channel)
     
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     mtcnn = MTCNN(keep_all=True,device = device)
@@ -99,7 +99,7 @@ def Video_to_pic(pre_path = "", input_channel = 0,freq = 10,offsets = [0,0,0,0],
                 if (frame_cnt%freq == 0 and test_mode == False):
                     frame_cnt = 0
                     face = img_[top:bot,left:right]
-                    face[:,:,[0,1,2]] = face[:,:,[1,2,0]]
+                    face[:,:,[0,1,2]] = face[:,:,[2,1,0]]
                     im_suffix = str(im_cnt)+".jpg"
                     im_name = pre_path + im_suffix
                     save_image = Image.fromarray(face)
