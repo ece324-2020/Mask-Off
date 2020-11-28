@@ -4,13 +4,13 @@ import sys
 
 from view.main_window import MainWindow
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 
 
 DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/ui/ProjectWindow_buttons.ui"
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-# from yolov5_pipeline.detect import detect
+# sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from yolov5_pipeline.detect import VideoRendering
 
 
 FORMCLASS = uic.loadUiType(DIR)[0]
@@ -38,7 +38,12 @@ class ProjectWindowButton(QtWidgets.QWidget, FORMCLASS):
         pass
 
     def on_start_button(self):
+        self._label = QtWidgets.QLabel()
+        self._videoRendering = VideoRendering(self._label)
+        self._videoRendering.detect()
+        self._main.gridLayout_3.addWidget(self._label)
         self._main.show()
+        
         # self._project.close()
         
         
