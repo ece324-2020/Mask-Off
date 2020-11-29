@@ -5,7 +5,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self._ui_main = Ui_MainWindow()
-        self._ui_main.setupUi(self)
+        # self._ui_main.setupUi(self)
         # self.setupUi(self)
         
 

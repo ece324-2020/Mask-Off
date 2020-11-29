@@ -3,6 +3,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import os, sys
 
 from yolov5_pipeline.models.common import Conv, DWConv
 from yolov5_pipeline.utils.google_utils import attempt_download
@@ -134,6 +135,8 @@ def attempt_load(weights, map_location=None):
     model = Ensemble()
     for w in weights if isinstance(weights, list) else [weights]:
         attempt_download(w)
+        # print(os.path.dirname(__file__))
+        sys.path.insert(0, './yolov5_pipeline')
         model.append(torch.load(w, map_location=map_location)['model'].float().fuse().eval())  # load FP32 model
 
     # Compatibility updates

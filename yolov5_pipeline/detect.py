@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 
 from PyQt5 import QtGui
-from PyQt5 import QtGui
+from PyQt5 import QtWidgets
 import threading
 import sys
 import os
@@ -29,24 +29,6 @@ class VideoRendering():
     def __init__(self, label):
         super(VideoRendering, self).__init__()
         self.label = label
-        # parser = argparse.ArgumentParser()
-        # parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
-        # parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
-        # parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
-        # parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
-        # parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
-        # parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-        # parser.add_argument('--view-img', action='store_true', help='display results')
-        # parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-        # parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
-        # parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')
-        # parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-        # parser.add_argument('--augment', action='store_true', help='augmented inference')
-        # parser.add_argument('--update', action='store_true', help='update all models')
-        # parser.add_argument('--project', default='runs/detect', help='save results to project/name')
-        # parser.add_argument('--name', default='exp', help='save results to project/name')
-        # parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
-        # opt = parser.parse_args()
 
         self.weights = 'yolov5_pipeline/best.pt'
         self.source = '0'
@@ -54,7 +36,7 @@ class VideoRendering():
         self.conf_thres = 0.25
         self.iou_thres = 0.45
         self.device = ''
-        self.view_img = None
+        self.view_img = True
         self.save_txt = None
         self.save_conf= None
         self.classes = None
@@ -64,6 +46,8 @@ class VideoRendering():
         self.project = 'runs/detect'
         self.name = 'exp'
         self.exist_ok = None
+        self.fullscreen_ = 0
+        self.isStart_ = 1
      
         
         
@@ -125,23 +109,40 @@ class VideoRendering():
 
                 # Stream results
                 if view_img:
-                    # cv2.namedWindow(str(p), cv2.WINDOW_NORMAL)
-                    # cv2.setWindowProperty(str(p), cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-                    # cv2.imshow(str(p), im0)
-                    # cv2.namedWindow(str(p), im0)
-
-
-                    ret, img = im0.read()
-                    if ret: 
-                        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                        h,w,c = img.shape
-                        qImg = QtGui.QImage(img.data, w, h, w*c, QtGui.QImage.Format_RGB888)
-                        pixmap = QtGui.QPixmap.fromImage(qImg)
-                        self.label.setPixmap(pixmap)
+                    cv2.namedWindow("YOLOV5", cv2.WINDOW_NORMAL)
+                   
+                    cv2.imshow("YOLOV5", im0)
+                    if(self.isStart_):
+                        cv2.resizeWindow("YOLOV5", 1500, 1000)
+                        cv2.moveWindow("YOLOV5", 0, 0)
+                        self.isStart_ = 0
                     else:
-                        QtWidgets.QMessageBox.about(win, "Error", "Cannot read frame.")
-                        print("cannot read frame.")
-                        break
+                        pass
+                    # if(self.fullscreen_):
+                    #     cv2.setWindowProperty(str(p), cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+                    # else:
+                    #     cv2.moveWindow(str(p), 0, 0)
+                    #     cv2.resizeWindow(str(p), 1100,450)
+                        
+                    # cv2.moveWindow(str(p), 0, 0)
+                    # cv2.resizeWindow(str(p), 1100,450)
+
+             
+                     
+                    # img = im0
+                    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    # h,w,c = img.shape
+                    # print(h, " ", w, " ", c, " ", "아 제발", "\n")
+                    # qImg = QtGui.QImage(img, w, h, w*c, QtGui.QImage.Format_RGB888)
+                    # qimage = QtGui.QImage(im0, im0.shape[1], im0.shape[0], QtGui.QImage.Format_RGB888)
+                    # pixmap = QtGui.QPixmap.fromImage(qimage)
+                    # self.label.setPixmap(pixmap)
+
+                    # else:
+                    #     win = QtWidgets.QWidget()
+                    #     QtWidgets.QMessageBox.about(win, "Error", "Cannot read frame.")
+                    #     print("cannot read frame.")
+                    #     break
                     
 
                     
@@ -179,6 +180,8 @@ class VideoRendering():
         # Initialize
         set_logging()
         device = select_device(self.device)
+        print(device)
+        print("Here")
         half = device.type != 'cpu'  # half precision only supported on CUDA
 
         # Load model
@@ -211,9 +214,12 @@ class VideoRendering():
         t0 = time.time()
         img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
-        th = threading.Thread(target=self.run(dataset, device, half, model, classify, webcam, save_dir, names, save_txt
-            ,view_img, save_img, colors))
-        th.start()
+        # th = threading.Thread(target=self.run(dataset, device, half, model, classify, webcam, save_dir, names, save_txt
+            # ,view_img, save_img, colors))
+        self.run(dataset, device, half, model, classify, webcam, save_dir, names, save_txt
+            ,view_img, save_img, colors)
+        # th.start()
+
 
         if save_txt or save_img:
             s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''

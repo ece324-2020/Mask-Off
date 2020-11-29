@@ -1,8 +1,8 @@
 from PyQt5 import uic, QtWidgets
 import os
 import sys
-
-from view.main_window import MainWindow
+import torch
+from view.ui_main_window import Ui_MainWindow
 
 
 
@@ -29,6 +29,8 @@ class ProjectWindowButton(QtWidgets.QWidget, FORMCLASS):
         self.start_button.clicked.connect(self.on_start_button)
 
         self._main = main
+        # self._main = Ui_MainWindow()
+     
         self._project = project
 
     def on_setting_button(self):
@@ -39,13 +41,17 @@ class ProjectWindowButton(QtWidgets.QWidget, FORMCLASS):
 
     def on_start_button(self):
         self._label = QtWidgets.QLabel()
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(self._label)
         self._videoRendering = VideoRendering(self._label)
-        self._videoRendering.detect()
-        self._main.gridLayout_3.addWidget(self._label)
-        self._main.show()
         
-        # self._project.close()
-        
+        # self._main._ui_main.setupUi(self._main)
+        # self._main._ui_main.gridLayout_3.addWidget(self._label)
+        # self._main.show()
+
+        with torch.no_grad():
+            self._videoRendering.detect()
+
         
 
     
