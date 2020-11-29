@@ -84,8 +84,8 @@ def LiveMaskDetector(model_path,input_dim = None,input_channel = 0,
     video = cv2.VideoCapture(input_channel)
     face_detector = MTCNN(keep_all=True,device = device)
     
-    labels = ['No Mask','Mask','Uncovered Nose']
-    labelcolour = [(0,0,255),(0,255,0),(0,165,255)]
+    labels = ['Mask','No Mask','Uncovered Nose']
+    labelcolour = [(0,255,0),(0,0,255),(0,165,255)]
     
     model = torch.load(model_path)
     model.to(device)
