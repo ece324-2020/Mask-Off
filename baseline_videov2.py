@@ -104,6 +104,8 @@ def LiveMaskDetector(model_path,input_dim = None,input_channel = 0,
                 left,top,right,bot = GetFaceSquare(face_boxes,i,dim,offsets)
                 
                 face = framec[top:bot,left:right]
+                #cv2 extracts in BGR order, our model is trained with RGB
+                face[:,:,[0,1,2]] = face[:,:,[2,1,0]]
                 # Change to tensor, resize etc.
                 face = transform(face)
                 # Add extra dim for model input
