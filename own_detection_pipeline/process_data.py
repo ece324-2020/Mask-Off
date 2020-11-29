@@ -5,8 +5,7 @@ import torchvision
 import torchvision.transforms as transforms
 from mask_dataset import MaskDataSet
 
-imagef = torchvision.datasets.ImageFolder('/content/drive/MyDrive/Mask Off/datasets_cv',
-                                          transform=transforms.ToTensor())
+imagef = torchvision.datasets.ImageFolder('../../Data/datasets_cv', transform=transforms.ToTensor())
 data_loader = DataLoader(imagef, batch_size=30)
 
 
@@ -45,7 +44,7 @@ transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize(means, stds)])
 
-fullImages = torchvision.datasets.ImageFolder('/content/drive/MyDrive/Mask Off/datasets_cv', transform=transform)
+fullImages = torchvision.datasets.ImageFolder('../../Data/datasets_cv', transform=transform)
 
 switcher = {
     0: [1.0, 0.0, 0.0],
@@ -72,7 +71,7 @@ total_time = end_time - start_time
 print("total time: (s)", total_time)
 
 
-# Save model (if desired)
+# Save model (if desired) - this requires a lot of ram
 torch.save(images, 'images.pt')
 torch.save(oh_labels, 'oh_labels.pt')
 # torch.save(masked_ds, "masked_v2.pt")

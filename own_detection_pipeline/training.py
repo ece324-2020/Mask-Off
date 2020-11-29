@@ -69,7 +69,7 @@ def test_eval(model, loss_fnc, testd, testl):
 
     for i in range(len(testd)):
         total = total + 1
-        predict = model(testd[i].unsqueeze(0))
+        predict = model(testd[i].unsqueeze(0)).squeeze(0)
         label = testl[i]
         if label[np.argmax(predict.detach().numpy())] == 1:
             total_corr = total_corr + 1
@@ -86,7 +86,6 @@ def main(args):
     seed = args.seed
     model_type = args.model_type
 
-
     # 70, 10, 20 train,validation,test split
     # This is probably not the best way to do this but it was the quickest to get working
     images = torch.load('images.pt')
@@ -95,16 +94,15 @@ def main(args):
     td, tvd, tl, tvl = train_test_split(images, oh_labels, test_size=0.3, random_state=0)
     vd, testd, vl, testl = train_test_split(tvd, tvl, test_size=float(2 / 3), random_state=0)
 
-
     # Training loop
     torch.manual_seed(seed)
 
     # Initialize model, loss_fnc, optimizer
-    model, loss_fnc, optimizer = load_model(lr)
+    model, loss_fnc, optimizer = load_model(lr, model_type)
     e = 0
 
     # Initialize data loader
-    train_iter, val_iter = load_data(bs)
+    train_iter, val_iter = load_data(bs, td, tl, vd, vl)
 
     # For plotting
     tlossRec = []
@@ -132,7 +130,7 @@ def main(args):
         tlossRec.append(sum(templossRec) / len(templossRec))
         taccRec.append(sum(tempaccRec) / len(tempaccRec))
         model.eval()
-        vacc, vloss = evaluate(model, val_iter)
+        vacc, vloss = evaluate(model, val_iter, loss_fnc)
         vaccRec.append(vacc)
         vlossRec.append(vloss)
         model.train()
@@ -162,12 +160,10 @@ def main(args):
     plt.ylabel('Loss')
     plt.legend(['Training', 'Validation'])
 
-
     testacc, testloss = test_eval(model, loss_fnc, testd, testl)
 
     print("Test accuracy:", testacc, "\n")
     print("Test loss:", testloss)
-
 
     torch.save(model, 'baseline_maskless.pt2')
 
@@ -177,9 +173,10 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--epochs', type=int, default=25)
-    parser.add_argument('--model', type=str, default='baseline',
+    parser.add_argument('--model-type', type=str, default='baseline',
                         help="Model type: baseline, resnet (Default: baseline)")
     parser.add_argument('--overfit', type=bool, default=False)
+    parser.add_argument('--seed', type=int, default=0)
 
     args = parser.parse_args()
     main(args)
