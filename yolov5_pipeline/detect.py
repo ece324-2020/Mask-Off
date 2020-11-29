@@ -37,13 +37,13 @@ class VideoRendering():
         self.iou_thres = 0.45
         self.device = ''
         self.view_img = True
-        self.save_txt = None
+        self.save_txt = True
         self.save_conf= None
         self.classes = None
         self.agnostic_nms = None
         self.augment = None
         self.update = None
-        self.project = 'runs/detect'
+        self.project = 'yolov5_pipeline/runs/detect'
         self.name = 'exp'
         self.exist_ok = None
         self.fullscreen_ = 0
@@ -147,6 +147,7 @@ class VideoRendering():
 
                     
                     if cv2.waitKey(1) == ord('q'):  # q to quit
+                        
                         raise StopIteration
 
                 # Save results (image with detections)

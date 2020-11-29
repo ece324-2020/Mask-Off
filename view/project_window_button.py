@@ -52,6 +52,7 @@ class ProjectWindowButton(QtWidgets.QWidget, FORMCLASS):
         with torch.no_grad():
             self._videoRendering.detect()
 
+
         
 
     
