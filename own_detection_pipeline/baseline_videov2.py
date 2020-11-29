@@ -13,9 +13,7 @@ from facenet_pytorch import MTCNN
 from torchvision import transforms
 from torch import nn
 
-
 class Baseline(nn.Module):
-
     def __init__(self):
         super(Baseline, self).__init__()
         self.conv1 = nn.Conv2d(3, 10, 3)
@@ -32,18 +30,18 @@ class Baseline(nn.Module):
         x = self.pool2(torch.relu(self.conv2(x)))
         x = self.pool3(torch.relu(self.conv3(x)))
         x = x.view(-1, 5 * 13 * 13)
+
         x = torch.relu(self.fc1(x))
         x = torch.sigmoid(self.fc2(x))
 
         return x
-
 
 def GetDim(input_channel=0):
     cap = cv2.VideoCapture(input_channel)
     ret, frame = cap.read()
     return (frame.shape[:2])
 
-
+  
 def GetFaceSquare(face_boxes, i, dim, offsets):
     left, top, right, bot = face_boxes[i]
 
@@ -71,6 +69,7 @@ def GetFaceSquare(face_boxes, i, dim, offsets):
 def LiveMaskDetector(model_path, input_dim=None, input_channel=0,
                      means=[0.5142, 0.4515, 0.4201], stds=[0.2757, 0.2692, 0.2875],
                      offsets=[50, 50, 50, 50]):
+
     if type(input_dim) == type(None):
         dim = GetDim(input_channel)
     elif len(input_dim) != 2:
@@ -108,6 +107,7 @@ def LiveMaskDetector(model_path, input_dim=None, input_channel=0,
                 face = framec[top:bot, left:right]
                 # cv2 extracts in BGR order, our model is trained with RGB
                 face[:, :, [0, 1, 2]] = face[:, :, [2, 1, 0]]
+
                 # Change to tensor, resize etc.
                 face = transform(face)
                 # Add extra dim for model input
@@ -119,7 +119,9 @@ def LiveMaskDetector(model_path, input_dim=None, input_channel=0,
                 output = model(face)
                 exped = torch.exp(output.squeeze().detach())
                 tot = exped.sum()
+
                 prob = exped / tot
+
                 if device.type == 'cuda':
                     prob = prob.cpu().numpy()
                 else:
@@ -145,3 +147,4 @@ def LiveMaskDetector(model_path, input_dim=None, input_channel=0,
         if cv2.waitKey(1) & 0xFF == ord('q'):
             video.release()
             cv2.destroyAllWindows()
+
