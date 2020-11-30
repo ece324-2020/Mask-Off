@@ -12,6 +12,7 @@ class Baseline(nn.Module):
         self.conv3 = nn.Conv2d(5, 5, 5)
         self.pool3 = nn.MaxPool2d(2, 2)
         self.fc1 = nn.Linear(5 * 13 * 13, 100)
+        self.bn = nn.BatchNorm1d(100)
         self.fc2 = nn.Linear(100, 3)
 
     def forward(self, x):
@@ -19,7 +20,7 @@ class Baseline(nn.Module):
         x = self.pool2(torch.relu(self.conv2(x)))
         x = self.pool3(torch.relu(self.conv3(x)))
         x = x.view(-1, 5 * 13 * 13)
-        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.bn(self.fc1(x)))
         x = torch.sigmoid(self.fc2(x))
 
         return x
