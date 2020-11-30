@@ -41,23 +41,9 @@ def load_model(lr, model_type, loss_fnc_type="mse"):
 
 
 def accuracy(predict, label, loss_fnc_type):
-    # refactor to use matrix math for speed
-    total_corr = 0
-    if loss_fnc_type != "mse":
-        predict = torch.argmax(predict, dim=1).detach().numpy()
-        label = torch.argmax(label, dim=1).detach().numpy()
-        total_corr = np.sum(predict == label)
-    else:
-        print(predict)
-        print(label)
-        for i in range(len(predict)):
-            this_pred = predict[i].detach().numpy()
-            this_label = label[i].detach().numpy()
-            pred_max = np.argmax(this_pred)
-
-            if this_label[pred_max] == 1:
-                total_corr = total_corr + 1
-
+    predict = torch.argmax(predict, dim=1).detach().numpy()
+    label = torch.argmax(label, dim=1).detach().numpy()
+    total_corr = np.sum(predict == label)
     return total_corr / len(predict)
 
 
@@ -84,7 +70,6 @@ def test_eval(model, loss_fnc, testd, testl):
     total_corr = 0
     total = 0
     total_loss = 0
-    print(testd)
     for i in range(len(testd)):
         total = total + 1
         predict = model(testd[i].unsqueeze(0)).squeeze(0)
@@ -177,6 +162,7 @@ def main(args):
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')
         plt.legend(['Training', 'Validation'])
+        plt.show()
 
         plt.plot(eRec, tlossRec, color='red')
         plt.plot(eRec, vlossRec, color='blue')
@@ -184,13 +170,14 @@ def main(args):
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.legend(['Training', 'Validation'])
+        plt.show()
 
-    testacc, testloss = test_eval(model, loss_fnc, testd, testl)
+    # testacc, testloss = test_eval(model, loss_fnc, testd, testl)
+    #
+    # print("Test accuracy:", testacc, "\n")
+    # print("Test loss:", testloss)
 
-    print("Test accuracy:", testacc, "\n")
-    print("Test loss:", testloss)
-
-    torch.save(model, 'baseline_maskless.pt2')
+    torch.save(model, 'resnet.pt2')
 
 
 if __name__ == '__main__':
