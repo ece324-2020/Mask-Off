@@ -10,7 +10,19 @@ def Find_Vid_dim(input_channel=0):
     return frame.shape[:2]
 
 
-def get_bounding_square(mtcnn, img_, dim, offsets):
+def make_square(fheight, fwidth, left, right, top, bot, dim):
+    if fheight > fwidth:
+        adding = (fheight - fwidth) // 2
+        left = int(max((left - adding), 0))
+        right = int(min((right + adding), dim[1]))
+    elif fwidth > fheight:
+        adding = (fwidth - fheight) // 2
+        top = int(max((top - adding), 0))
+        bot = int((min(bot + adding), dim[0]))
+    return left, right, top, bot
+
+
+def get_bounding_square(mtcnn, img_, dim, offsets, square=True):
     boxes, _ = mtcnn.detect(img_)
 
     # Get bounding box edges
@@ -23,14 +35,8 @@ def get_bounding_square(mtcnn, img_, dim, offsets):
     fwidth = right - left
 
     # To make bounding box a square
-    if fheight > fwidth:
-        adding = (fheight - fwidth) // 2
-        left = int(max((left - adding), 0))
-        right = int(min((right + adding), dim[1]))
-    elif fwidth > fheight:
-        adding = (fwidth - fheight) // 2
-        top = int(max((top - adding), 0))
-        bot = int((min(bot + adding), dim[0]))
+    if square:
+        left, right, top, bot = make_square(fheight, fwidth, left, right, top, bot, dim)
 
     return left, right, top, bot
 

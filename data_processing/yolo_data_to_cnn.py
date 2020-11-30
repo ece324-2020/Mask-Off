@@ -27,7 +27,6 @@ def main(pre_path="", freq=10, offsets=(0, 0, 0, 0), test_mode=True):
     nose_unc = {}
 
     name = ("<name>", "</name>")
-    width = ("<width>", "</width>")
     xmin = ("<xmin>", "</xmin>")
     xmax = ("<xmax>", "</xmax>")
     ymin = ("<ymin>", "</ymin>")
