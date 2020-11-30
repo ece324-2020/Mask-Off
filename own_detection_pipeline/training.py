@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
+import torchvision.models as models
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from baseline_model import Baseline
@@ -18,32 +19,49 @@ def load_data(batch_size, td, tl, vd, vl):
     return train_loader, val_loader
 
 
-def load_model(lr, model_type):
+def load_model(lr, model_type, loss_fnc_type="mse"):
     model = Baseline()
     if model_type == "resnet":
-        pass
-        # model = resnet()
+        model = models.resnet18(pretrained=True)
+        num_ftrs = model.fc.in_features
+        model.fc = nn.Linear(num_ftrs, 3)
+        ct = 0
+        for name, child in model.named_children():
+            if ct < 4:
+                for name2, params in child.named_parameters():
+                    params.requires_grad = False
+            ct += 1
+
+
     loss_fnc = nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    if loss_fnc_type != "mse":
+        loss_fnc = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     return model, loss_fnc, optimizer
 
 
-def accuracy(predict, label):
+def accuracy(predict, label, loss_fnc_type):
     # refactor to use matrix math for speed
-
     total_corr = 0
-    for i in range(len(predict)):
-        this_pred = predict[i].detach().numpy()
-        this_label = label[i].detach().numpy()
-        pred_max = np.argmax(this_pred)
+    if loss_fnc_type != "mse":
+        predict = torch.argmax(predict, dim=1).detach().numpy()
+        label = torch.argmax(label, dim=1).detach().numpy()
+        total_corr = np.sum(predict == label)
+    else:
+        print(predict)
+        print(label)
+        for i in range(len(predict)):
+            this_pred = predict[i].detach().numpy()
+            this_label = label[i].detach().numpy()
+            pred_max = np.argmax(this_pred)
 
-        if this_label[pred_max] == 1:
-            total_corr = total_corr + 1
+            if this_label[pred_max] == 1:
+                total_corr = total_corr + 1
 
     return total_corr / len(predict)
 
 
-def evaluate(model, val_loader, loss_fnc):
+def evaluate(model, val_loader, loss_fnc, loss_fnc_type):
     total_corr = 0
     total = 0
     nbatch = 0
@@ -53,9 +71,9 @@ def evaluate(model, val_loader, loss_fnc):
         if nbatch + 1 == len(val_loader):
             break
         predict = model(img)
-        loss = loss_fnc(input=predict, target=label)
+        loss = get_loss(predict, label, loss_fnc_type, loss_fnc)
         total_loss = total_loss + loss.item()
-        total_corr = total_corr + accuracy(predict, label) * len(predict)
+        total_corr = total_corr + accuracy(predict, label, loss_fnc_type) * len(predict)
         total = total + len(predict)
         nbatch = nbatch + 1
 
@@ -66,7 +84,7 @@ def test_eval(model, loss_fnc, testd, testl):
     total_corr = 0
     total = 0
     total_loss = 0
-
+    print(testd)
     for i in range(len(testd)):
         total = total + 1
         predict = model(testd[i].unsqueeze(0)).squeeze(0)
@@ -78,6 +96,11 @@ def test_eval(model, loss_fnc, testd, testl):
     return total_corr / total, total_loss / total
 
 
+def get_loss(input, target, loss_fnc_type, loss_fnc):
+    if loss_fnc_type != "mse":
+        target = torch.argmax(target, dim=1)
+    return loss_fnc(input=input, target=target)
+
 def main(args):
     # Hyperparameters
     nepochs = args.epochs
@@ -85,8 +108,9 @@ def main(args):
     bs = args.batch_size
     seed = args.seed
     model_type = args.model_type
+    loss_fnc_type = args.loss_fnc_type
 
-    # 70, 10, 20 train,validation,test split
+    # 70, 10, 20 train, validation, test split
     # This is probably not the best way to do this but it was the quickest to get working
     images = torch.load('images.pt')
     oh_labels = torch.load('oh_labels.pt')
@@ -98,7 +122,7 @@ def main(args):
     torch.manual_seed(seed)
 
     # Initialize model, loss_fnc, optimizer
-    model, loss_fnc, optimizer = load_model(lr, model_type)
+    model, loss_fnc, optimizer = load_model(lr, model_type, loss_fnc_type)
     e = 0
 
     # Initialize data loader
@@ -116,49 +140,50 @@ def main(args):
     # Time
     start_time = time()
     for i in range(nepochs):
+        model.train()
         for img, label in train_iter:
             optimizer.zero_grad()
             predict = model(img)
-            loss = loss_fnc(input=predict, target=label)
+            loss = get_loss(predict, label, loss_fnc_type, loss_fnc)
             loss.backward()
             optimizer.step()
             # Track training loss and accuracy throughout
             templossRec.append(loss.item())
-            tempaccRec.append(accuracy(predict, label))
+            tempaccRec.append(accuracy(predict, label, loss_fnc_type))
         print(i)
 
         tlossRec.append(sum(templossRec) / len(templossRec))
         taccRec.append(sum(tempaccRec) / len(tempaccRec))
         model.eval()
-        vacc, vloss = evaluate(model, val_iter, loss_fnc)
+        vacc, vloss = evaluate(model, val_iter, loss_fnc, loss_fnc_type)
         vaccRec.append(vacc)
         vlossRec.append(vloss)
-        model.train()
         eRec.append(e)
         e = e + 1
         templossRec = []
         tempaccRec = []
 
     stop_time = time()
-    print("Total time:", stop_time - start_time)
-    print("Final training accuracy: ", taccRec[-1])
-    print("Final validation accuracy: ", vaccRec[-1])
-    print("Final training loss: ", tlossRec[-1])
-    print("Final validation loss: ", vlossRec[-1])
+    if nepochs > 0:
+        print("Total time:", stop_time - start_time)
+        print("Final training accuracy: ", taccRec[-1])
+        print("Final validation accuracy: ", vaccRec[-1])
+        print("Final training loss: ", tlossRec[-1])
+        print("Final validation loss: ", vlossRec[-1])
 
-    plt.plot(eRec, taccRec, color='red')
-    plt.plot(eRec, vaccRec, color='blue')
-    plt.title('Accuracy (nEp:{}, L_r:{}, batch:{}, seed:{})'.format(nepochs, lr, bs, seed))
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.legend(['Training', 'Validation'])
+        plt.plot(eRec, taccRec, color='red')
+        plt.plot(eRec, vaccRec, color='blue')
+        plt.title('Accuracy (nEp:{}, L_r:{}, batch:{}, seed:{})'.format(nepochs, lr, bs, seed))
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.legend(['Training', 'Validation'])
 
-    plt.plot(eRec, tlossRec, color='red')
-    plt.plot(eRec, vlossRec, color='blue')
-    plt.title('Loss (nEp:{}, L_r:{}, batch:{}, seed:{})'.format(nepochs, lr, bs, seed))
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend(['Training', 'Validation'])
+        plt.plot(eRec, tlossRec, color='red')
+        plt.plot(eRec, vlossRec, color='blue')
+        plt.title('Loss (nEp:{}, L_r:{}, batch:{}, seed:{})'.format(nepochs, lr, bs, seed))
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend(['Training', 'Validation'])
 
     testacc, testloss = test_eval(model, loss_fnc, testd, testl)
 
@@ -175,6 +200,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=25)
     parser.add_argument('--model-type', type=str, default='baseline',
                         help="Model type: baseline, resnet (Default: baseline)")
+    parser.add_argument('--loss-fnc-type', type=str, default="mse")
     parser.add_argument('--overfit', type=bool, default=False)
     parser.add_argument('--seed', type=int, default=0)
 
