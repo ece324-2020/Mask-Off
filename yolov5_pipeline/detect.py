@@ -129,14 +129,14 @@ class VideoRendering():
 
              
                      
-                    # img = im0
-                    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                    # h,w,c = img.shape
-                    # print(h, " ", w, " ", c, " ", "아 제발", "\n")
-                    # qImg = QtGui.QImage(img, w, h, w*c, QtGui.QImage.Format_RGB888)
-                    # qimage = QtGui.QImage(im0, im0.shape[1], im0.shape[0], QtGui.QImage.Format_RGB888)
-                    # pixmap = QtGui.QPixmap.fromImage(qimage)
-                    # self.label.setPixmap(pixmap)
+                    img = im0
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    h,w,c = img.shape
+                    print(h, " ", w, " ", c, " ", "아 제발", "\n")
+                    qImg = QtGui.QImage(img, w, h, w*c, QtGui.QImage.Format_RGB888)
+                    qimage = QtGui.QImage(im0, im0.shape[1], im0.shape[0], QtGui.QImage.Format_RGB888)
+                    pixmap = QtGui.QPixmap.fromImage(qimage)
+                    self.label.setPixmap(pixmap)
 
                     # else:
                     #     win = QtWidgets.QWidget()

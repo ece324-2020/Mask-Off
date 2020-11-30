@@ -66,9 +66,9 @@ def GetFaceSquare(face_boxes, i, dim, offsets):
     return left, top, right, bot
 
 
-def LiveMaskDetector(model_path, input_dim=None, input_channel=0,
+def LiveMaskDetector(model_path="baseline_rtpv.pt2", input_dim=None, input_channel=0,
                      means=[0.5142, 0.4515, 0.4201], stds=[0.2757, 0.2692, 0.2875],
-                     offsets=[50, 50, 50, 50]):
+                     offsets=[0, 0, 0, 0]):
 
     if type(input_dim) == type(None):
         dim = GetDim(input_channel)
@@ -141,10 +141,12 @@ def LiveMaskDetector(model_path, input_dim=None, input_channel=0,
 
         else:
             pass
-
+        cv2.namedWindow("Mask Off", cv2.WINDOW_NORMAL)
         cv2.imshow('Mask Off', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             video.release()
             cv2.destroyAllWindows()
 
+if __name__ == "__main__":
+    live = LiveMaskDetector()
