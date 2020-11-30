@@ -40,9 +40,8 @@ class ProjectWindowButton(QtWidgets.QWidget, FORMCLASS):
         pass
 
     def on_start_button(self):
+        self.start_button.setText("Loading")
         self._label = QtWidgets.QLabel()
-        vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self._label)
         self._videoRendering = VideoRendering(self._label)
         
         # self._main._ui_main.setupUi(self._main)
@@ -50,6 +49,8 @@ class ProjectWindowButton(QtWidgets.QWidget, FORMCLASS):
         # self._main.show()
 
         with torch.no_grad():
+            self.start_button.setText("On Live")
+            self.start_button.setEnabled(False)
             self._videoRendering.detect()
 
 
