@@ -9,11 +9,40 @@ import cv2
 import torch
 import numpy as np
 
+from PyQt5 import QtWidgets
 from facenet_pytorch import MTCNN
 from torchvision import transforms
+import qimage2ndarray
+# from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QPixmap, QPainter
 from torch import nn
+from PyQt5.QtCore import Qt
+
+# class Baseline(nn.Module):
+#     def __init__(self):
+#         super(Baseline, self).__init__()
+#         self.conv1 = nn.Conv2d(3, 10, 3)
+#         self.pool1 = nn.MaxPool2d(2, 2, padding=1)
+#         self.conv2 = nn.Conv2d(10, 5, 5)
+#         self.pool2 = nn.MaxPool2d(2, 2)
+#         self.conv3 = nn.Conv2d(5, 5, 5)
+#         self.pool3 = nn.MaxPool2d(2, 2)
+#         self.fc1 = nn.Linear(5 * 13 * 13, 100)
+#         self.fc2 = nn.Linear(100, 3)
+
+#     def forward(self, x):
+#         x = self.pool1(torch.relu(self.conv1(x)))
+#         x = self.pool2(torch.relu(self.conv2(x)))
+#         x = self.pool3(torch.relu(self.conv3(x)))
+#         x = x.view(-1, 5 * 13 * 13)
+
+#         x = torch.relu(self.fc1(x))
+#         x = torch.sigmoid(self.fc2(x))
+
+#         return x
 
 class Baseline(nn.Module):
+
     def __init__(self):
         super(Baseline, self).__init__()
         self.conv1 = nn.Conv2d(3, 10, 3)
@@ -23,6 +52,7 @@ class Baseline(nn.Module):
         self.conv3 = nn.Conv2d(5, 5, 5)
         self.pool3 = nn.MaxPool2d(2, 2)
         self.fc1 = nn.Linear(5 * 13 * 13, 100)
+        self.bn = nn.BatchNorm1d(100)
         self.fc2 = nn.Linear(100, 3)
 
     def forward(self, x):
@@ -30,8 +60,7 @@ class Baseline(nn.Module):
         x = self.pool2(torch.relu(self.conv2(x)))
         x = self.pool3(torch.relu(self.conv3(x)))
         x = x.view(-1, 5 * 13 * 13)
-
-        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.bn(self.fc1(x)))
         x = torch.sigmoid(self.fc2(x))
 
         return x
@@ -66,9 +95,9 @@ def GetFaceSquare(face_boxes, i, dim, offsets):
     return left, top, right, bot
 
 
-def LiveMaskDetector(model_path="baseline_rtpv.pt2", input_dim=None, input_channel=0,
+def LiveMaskDetector(model_path="./baseline_rtpv.pt2", input_dim=None, input_channel=0,
                      means=[0.5142, 0.4515, 0.4201], stds=[0.2757, 0.2692, 0.2875],
-                     offsets=[0, 0, 0, 0]):
+                     offsets=[0, 0, 0, 0], label=None):
 
     if type(input_dim) == type(None):
         dim = GetDim(input_channel)
@@ -94,6 +123,7 @@ def LiveMaskDetector(model_path="baseline_rtpv.pt2", input_dim=None, input_chann
 
     while True:
         ret, frame = video.read()
+
 
         framec = frame.copy()
         face_boxes, _ = face_detector.detect(framec)
@@ -141,12 +171,19 @@ def LiveMaskDetector(model_path="baseline_rtpv.pt2", input_dim=None, input_chann
 
         else:
             pass
-        cv2.namedWindow("Mask Off", cv2.WINDOW_NORMAL)
-        cv2.imshow('Mask Off', frame)
+        cv2.namedWindow("Mask Off")
+        # cv2.imshow('Mask Off', frame)
+        # painter = QPainter()
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image = qimage2ndarray.array2qimage(frame)
+        label.setPixmap(QPixmap.fromImage(image).scaled(label.width(),label.height(),Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        # label.setAlignment(Qt.AlignCenter)
+        # label.setSizePolicy(QSizePolicy.)
+        label.setAlignment(Qt.AlignCenter)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             video.release()
             cv2.destroyAllWindows()
 
-if __name__ == "__main__":
-    live = LiveMaskDetector()
+# if __name__ == "__main__":
+#     liv = LiveMaskDetector()

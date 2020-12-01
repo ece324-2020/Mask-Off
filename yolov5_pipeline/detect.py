@@ -4,6 +4,7 @@ from pathlib import Path
 
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import Qt
 import threading
 import sys
 import os
@@ -111,7 +112,7 @@ class VideoRendering():
                 if view_img:
                     cv2.namedWindow("YOLOV5", cv2.WINDOW_NORMAL)
                    
-                    cv2.imshow("YOLOV5", im0)
+                    # cv2.imshow("YOLOV5", im0)
                     if(self.isStart_):
                         cv2.resizeWindow("YOLOV5", 1500, 1000)
                         cv2.moveWindow("YOLOV5", 0, 0)
@@ -130,12 +131,15 @@ class VideoRendering():
              
                      
                     img = im0
-                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     h,w,c = img.shape
                     print(h, " ", w, " ", c, " ", "아 제발", "\n")
-                    qImg = QtGui.QImage(img, w, h, w*c, QtGui.QImage.Format_RGB888)
+                    # qImg = QtGui.QImage(img, w, h, w*c, cv2.QImage.Format_RGB888)
+                    # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    # qimage = qimage2ndarray.array2qimage(frame)
                     qimage = QtGui.QImage(im0, im0.shape[1], im0.shape[0], QtGui.QImage.Format_RGB888)
-                    pixmap = QtGui.QPixmap.fromImage(qimage)
+                    pixmap = QtGui.QPixmap.fromImage(qimage).scaled(self.label.width(),self.label.height(),Qt.KeepAspectRatio, Qt.SmoothTransformation)
                     self.label.setPixmap(pixmap)
 
                     # else:

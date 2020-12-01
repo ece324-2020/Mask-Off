@@ -5,24 +5,28 @@ from PyQt5.QtCore import (QCoreApplication, QPropertyAnimation, QDate, QDateTime
 from PyQt5.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont, QFontDatabase, QIcon, QKeySequence, QLinearGradient, QPalette, QPainter, QPixmap, QRadialGradient)
 from PyQt5.QtWidgets import *
 import torch
+from torch import nn
 from yolov5_pipeline.detect import VideoRendering
+from own_detection_pipeline.baseline_videov2 import LiveMaskDetector
 SPLASH_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/ui/splash_screen.ui"
 FORMCLASS_SPLASH = uic.loadUiType(SPLASH_DIR)[0]
 
 GUI_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/ui/GUI.ui"
 FORMCLASS_GUI = uic.loadUiType(GUI_DIR)[0]
-print(FORMCLASS_GUI)
+
+
 counter = 0
 count = 1 
 GLOBAL_STATE = 0 
 GLOBAL_TITLE_BAR = True
 YOLO_ON = False
 OWN_ON = False
+
 class MainWindow(QtWidgets.QMainWindow, FORMCLASS_GUI):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setupUi(self)
-        # self.setWindowFlag(QtCore.Qt.WA_MouseTracking)
+     
 
         self.GLOBAL_STATE = 0
         self.GLOBAL_TITLE_BAR = True
@@ -44,7 +48,6 @@ class MainWindow(QtWidgets.QMainWindow, FORMCLASS_GUI):
         self.btn_close.setIcon(
             QtGui.QIcon(close_pic))
         self.btn_close.setIconSize(close_pic.size())
-        # self.btn_close.setAlignment(Qt.AlignHCenter)
 
         
         self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
@@ -55,7 +58,7 @@ class MainWindow(QtWidgets.QMainWindow, FORMCLASS_GUI):
 
         self.addNewMenu("HOME", "btn_home", os.path.join(self.main_folder_path, 'assets/icons/cli-home.png'), True)
         self.addNewMenu("Yolo_v5", "btn_yolov5", "url(:/16x16/icons/16x16/cil-user-follow.png)", True)
-        self.addNewMenu("Different Object Detection Method", "btn_own", "", True)
+        self.addNewMenu("Our Method", "btn_own", "", True)
         self.addNewMenu("Setting", "btn_widgets", "url(:/16x16/icons/16x16/cil-equalizer.png)", False)
         self.selectStandardMenu("btn_home")
         self.stackedWidget.setCurrentWidget(self.page_home)
@@ -98,11 +101,11 @@ class MainWindow(QtWidgets.QMainWindow, FORMCLASS_GUI):
             self.frame_size_grip.show()
 
     def moveWindow(self, event):
-            # IF MAXIMIZED CHANGE TO NORMAL
+            
             if self.returStatus() == 1:
                 self.maximize_restore()
 
-            # MOVE WINDOW
+            
             if event.buttons() == Qt.LeftButton:
                 self.move(self.pos() + event.globalPos() - self.dragPos)
                 self.dragPos = event.globalPos()
@@ -111,7 +114,7 @@ class MainWindow(QtWidgets.QMainWindow, FORMCLASS_GUI):
     def labelTitle(self, text):
         self.ui.label_title_bar_top.setText(text)
 
-    # LABEL DESCRIPTION
+    
     def labelDescription(self, text):
         self.ui.label_top_info_1.setText(text)
 
@@ -130,11 +133,10 @@ class MainWindow(QtWidgets.QMainWindow, FORMCLASS_GUI):
 
     def uiDefinitions(self):
         def dobleClickMaximizeRestore(event):
-            # IF DOUBLE CLICK CHANGE STATUS
             if event.type() == QtCore.QEvent.MouseButtonDblClick:
                 QtCore.QTimer.singleShot(250, lambda: UIFunctions.maximize_restore(self))
 
-        ## REMOVE ==> STANDARD TITLE BAR
+
         if self.GLOBAL_TITLE_BAR:
             self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
             self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
@@ -148,7 +150,7 @@ class MainWindow(QtWidgets.QMainWindow, FORMCLASS_GUI):
             self.frame_size_grip.hide()
 
 
-        ## SHOW ==> DROP SHADOW
+    
         self.shadow = QGraphicsDropShadowEffect(self)
         self.shadow.setBlurRadius(17)
         self.shadow.setXOffset(0)
@@ -156,26 +158,23 @@ class MainWindow(QtWidgets.QMainWindow, FORMCLASS_GUI):
         self.shadow.setColor(QColor(0, 0, 0, 150))
         self.frame_main.setGraphicsEffect(self.shadow)
 
-        ## ==> RESIZE WINDOW
+    
         self.sizegrip = QSizeGrip(self.frame_size_grip)
         self.sizegrip.setStyleSheet("width: 20px; height: 20px; margin 0px; padding: 0px;")
 
-        ### ==> MINIMIZE
+       
         self.btn_minimize.clicked.connect(lambda: self.showMinimized())
 
-        ## ==> MAXIMIZE/RESTORE
+     
         self.btn_maximize_restore.clicked.connect(lambda: self.maximize_restore())
 
-        ## SHOW ==> CLOSE APPLICATION
+    
         self.btn_close.clicked.connect(lambda: self.close())
 
-        # WIDGET TO MOVE
+       
     def userIcon(self, initialsTooltip, icon, showHide):
         if showHide:
-            # SET TEXT
-            # self.label_user_icon.setText(initialsTooltip)
-
-            # SET ICON
+            
             if icon:
                 style = self.label_user_icon.styleSheet()
                 setIcon = "QLabel { background-image: " + icon + "; }"
@@ -193,18 +192,18 @@ class MainWindow(QtWidgets.QMainWindow, FORMCLASS_GUI):
     
     def toggleMenu(self, maxWidth, enable):
         if enable:
-            # GET WIDTH
+            
             width = self.frame_left_menu.width()
             maxExtend = maxWidth
             standard = 70
 
-            # SET MAX WIDTH
+       
             if width == 70:
                 widthExtended = maxExtend
             else:
                 widthExtended = standard
 
-            # ANIMATION
+            
             self.animation = QPropertyAnimation(self.frame_left_menu, b"minimumWidth")
             self.animation.setDuration(300)
             self.animation.setStartValue(width)
@@ -237,16 +236,16 @@ class MainWindow(QtWidgets.QMainWindow, FORMCLASS_GUI):
 
 
     def Button(self):
-        # GET BT CLICKED
+     
         btnWidget = self.sender()
         
-        # PAGE HOME
+    
         if btnWidget.objectName() == "btn_home":
             self.stackedWidget.setCurrentWidget(self.page_home)
             self.resetStyle("btn_home")
             btnWidget.setStyleSheet(self.selectMenu(btnWidget.styleSheet()))
 
-        # PAGE NEW USER
+       
         if btnWidget.objectName() == "btn_yolov5":
             self.stackedWidget.setCurrentWidget(self.page_yolo)
             global YOLO_ON
@@ -260,9 +259,22 @@ class MainWindow(QtWidgets.QMainWindow, FORMCLASS_GUI):
             self.resetStyle("btn_yolov5")
             btnWidget.setStyleSheet(self.selectMenu(btnWidget.styleSheet()))
 
-        # PAGE WIDGETS
+       
         if btnWidget.objectName() == "btn_own":
             self.stackedWidget.setCurrentWidget(self.page_own)
+            global OWN_ON 
+            if OWN_ON != True:
+                OWN_ON = False
+                self._label2 = QtWidgets.QLabel()
+                # self._button = QtWidgets.QPushButton()
+                self.own_layout.addWidget(self._label2)
+                # self.own_layout.addWidget(self._button)
+                print(os.path.dirname(os.path.abspath(__file__)))
+            
+                self._own_rendering = LiveMaskDetector(model_path="./baseline_rtpv.pt2", 
+                                                        label=self._label2)
+                self._own
+
             self.resetStyle("btn_own")
             btnWidget.setStyleSheet(self.selectMenu(btnWidget.styleSheet()))
         
