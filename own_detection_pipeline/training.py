@@ -70,13 +70,14 @@ def test_eval(model, loss_fnc, testd, testl):
     total_corr = 0
     total = 0
     total_loss = 0
-    for i in range(len(testd)):
-        total = total + 1
-        predict = model(testd[i].unsqueeze(0)).squeeze(0)
+
+    for i, test in enumerate(testd):
+        total += 1
+        predict = model(test.unsqueeze(0)).squeeze(0)
         label = testl[i]
-        if label[np.argmax(predict.detach().numpy())] == 1:
-            total_corr = total_corr + 1
-        total_loss = total_loss + loss_fnc(predict, label).item()
+
+        total_loss += loss_fnc(predict, torch.argmax(label))
+        total_corr += 1 if torch.argmax(label) == torch.argmax(predict) else 0
 
     return total_corr / total, total_loss / total
 
@@ -94,11 +95,24 @@ def main(args):
     seed = args.seed
     model_type = args.model_type
     loss_fnc_type = args.loss_fnc_type
+    load_test_model = args.load_test_model
 
     # 70, 10, 20 train, validation, test split
     # This is probably not the best way to do this but it was the quickest to get working
-    images = torch.load('images.pt')
-    oh_labels = torch.load('oh_labels.pt')
+    dataset = torch.load('full_ds.pt')
+    data_loader = DataLoader(dataset, batch_size=len(dataset))
+    images = None
+    oh_labels = None
+    for image_batch, label_batch in data_loader:
+        images = image_batch
+        oh_labels = label_batch
+
+    print(images.shape)
+    print(oh_labels.shape)
+
+    # Can uncomment below if you want to use the stores pytorch tensors
+    # images = torch.load('images.pt')
+    # oh_labels = torch.load('oh_labels.pt')
 
     td, tvd, tl, tvl = train_test_split(images, oh_labels, test_size=0.3, random_state=0)
     vd, testd, vl, testl = train_test_split(tvd, tvl, test_size=float(2 / 3), random_state=0)
@@ -126,6 +140,7 @@ def main(args):
     start_time = time()
     for i in range(nepochs):
         model.train()
+        print(i)
         for img, label in train_iter:
             optimizer.zero_grad()
             predict = model(img)
@@ -135,7 +150,6 @@ def main(args):
             # Track training loss and accuracy throughout
             templossRec.append(loss.item())
             tempaccRec.append(accuracy(predict, label, loss_fnc_type))
-        print(i)
 
         tlossRec.append(sum(templossRec) / len(templossRec))
         taccRec.append(sum(tempaccRec) / len(tempaccRec))
@@ -172,12 +186,16 @@ def main(args):
         plt.legend(['Training', 'Validation'])
         plt.show()
 
-    # testacc, testloss = test_eval(model, loss_fnc, testd, testl)
-    #
-    # print("Test accuracy:", testacc, "\n")
-    # print("Test loss:", testloss)
+    if load_test_model:
+        model = torch.load('../trained_models/resnet_full.pt2')
+        model.eval()
 
-    torch.save(model, 'resnet.pt2')
+    testacc, testloss = test_eval(model, loss_fnc, testd, testl)
+
+    print("Test accuracy:", testacc, "\n")
+    print("Test loss:", testloss)
+
+    torch.save(model, '../trained_models/resnet_full.pt2')
 
 
 if __name__ == '__main__':
@@ -190,6 +208,7 @@ if __name__ == '__main__':
     parser.add_argument('--loss-fnc-type', type=str, default="mse")
     parser.add_argument('--overfit', type=bool, default=False)
     parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--load-test-model', type=bool, default=False)
 
     args = parser.parse_args()
     main(args)
