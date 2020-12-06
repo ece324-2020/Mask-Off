@@ -17,6 +17,14 @@ def Find_Vid_dim(input_channel = 0):
 def Video_to_pic(pre_path = "", input_channel = 0,freq = 10,offsets = [0,0,0,0],
                  input_dim = None, test_mode = True):
     """
+    This function will initiate live video streaming from 'input_channel'.
+    Then, MTCNN will find the bounding boxes of the face in the most recent frame
+    (to be used for singular face in the image). The offsets are then applied
+    to the coordinates given by the MTCNN (these are in place to manually 
+    warp the box for it to extract more than just the face). Once every 'freq'
+    number of frames, the face is cropped and saved (if test_mode is False)
+    into the location specified by 'pre_path'. 
+    
     To stop code from executing hit 'q'. The code will automatically make the
     bounding box around your face a (near) square.
 
