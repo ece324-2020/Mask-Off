@@ -7,6 +7,7 @@ import torchvision.models as models
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from baseline_model import Baseline
+from resnet import get_resnet
 from mask_dataset import MaskDataSet
 import argparse
 
@@ -22,16 +23,7 @@ def load_data(batch_size, td, tl, vd, vl):
 def load_model(lr, model_type, loss_fnc_type="mse"):
     model = Baseline()
     if model_type == "resnet":
-        model = models.resnet18(pretrained=True)
-        num_ftrs = model.fc.in_features
-        model.fc = nn.Linear(num_ftrs, 3)
-        ct = 0
-        for name, child in model.named_children():
-            if ct < 4:
-                for name2, params in child.named_parameters():
-                    params.requires_grad = False
-            ct += 1
-
+        model = get_resnet()
 
     loss_fnc = nn.MSELoss()
     if loss_fnc_type != "mse":
