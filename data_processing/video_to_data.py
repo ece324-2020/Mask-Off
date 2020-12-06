@@ -114,7 +114,7 @@ def Video_to_pic(pre_path = "", input_channel = 0,freq = 10,offsets = [0,0,0,0],
         except (TypeError):
             pass     
     
-        cv2.imshow('Mask detection',frame)
+        cv2.imshow('Mask Off - Data Collection',frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             video.release()
             cv2.destroyAllWindows()
