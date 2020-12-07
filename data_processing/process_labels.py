@@ -2,6 +2,12 @@ import cv2
 import glob
 import os
 
+""" 
+    This file augments the YOLO dataset by horizontally flipping all photos that have a nose_unc annotation.
+    Note that the inputs and outputs are PASCAL VOC XML and not YOLO, so it will have to manually be converted after
+    using Roboflow.
+"""
+
 
 def get_label(string, tags):
     return string.split(tags[0])[1].split(tags[1])[0]

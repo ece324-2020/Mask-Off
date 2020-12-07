@@ -3,6 +3,10 @@ import cv2
 from PIL import Image
 from facenet_pytorch import MTCNN
 
+"""
+    Modified Batuhan's code to create CNN data from prerecorded videos
+"""
+
 def Find_Vid_dim(input_channel=0):
     cap = cv2.VideoCapture(input_channel)
     ret, frame = cap.read()
@@ -83,13 +87,6 @@ def Video_to_pic(pre_path="", freq=10, offsets=(0, 0, 0, 0), test_mode=True):
         When set to true, images will not be saved. The default is True.
 
     """
-    # if input_dim == None:
-    #     dim = Find_Vid_dim(input_channel)
-    # elif len(input_dim) == 2:
-    #     dim = input_dim
-    # else:
-    #     print("Incorrect input_dim input")
-    #     return 0
 
     cap = cv2.VideoCapture("improperly_masked.mp4")
     ret, frame = cap.read()

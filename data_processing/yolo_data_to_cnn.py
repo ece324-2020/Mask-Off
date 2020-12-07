@@ -4,6 +4,13 @@ import glob
 from process_labels import get_label
 
 
+"""
+    This file will take in a YOLO dataset (in PASCAL VOC XML format) and crop according to the annotations to create
+    faces for the CNN models.
+    Note that this file needs to share a directory with three directories titled "masked", "no_mask", "nose_unc"
+"""
+
+
 def save_cropped(dict, type):
     for file, boxes in dict.items():
         img = Image.open('images/' + file)

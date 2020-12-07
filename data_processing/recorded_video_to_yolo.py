@@ -6,6 +6,12 @@ from recorded_video_to_data import Find_Vid_dim, get_bounding_square, save_image
 from process_labels import fill_value
 
 
+"""
+    Modified `recorded_video_to_data.py` to also output PASCAL VOC XML files, which will have to be converted using
+    roboflow before they can be used on the YOLO model.
+"""
+
+
 def create_annotation(left, right, top, bot, class_type, frame_num, dim):
     f = open('../template.xml', 'r')
     file = class_type + "_" + str(frame_num) + '.xml'
