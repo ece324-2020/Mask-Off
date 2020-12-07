@@ -54,13 +54,8 @@ switcher = {
 
 start_time = time()
 
-images = []
-oh_labels = []
-for i in range(len(fullImages)):
-    images = images + [fullImages[i][0]]
-    oh_labels = oh_labels + [torch.tensor(switcher[fullImages[i][1]])]
-    if i % 100 == 0:
-        print(i)
+images = [image[0] for image in fullImages]
+oh_labels = [torch.tensor(switcher[image[1]]) for image in fullImages]
 
 images = torch.stack(images)
 oh_labels = torch.stack(oh_labels)
@@ -71,10 +66,12 @@ total_time = end_time - start_time
 print("total time: (s)", total_time)
 
 
-# Save model (if desired) - this requires a lot of ram
-torch.save(images, 'images.pt')
-torch.save(oh_labels, 'oh_labels.pt')
-# torch.save(masked_ds, "masked_v2.pt")
+# Save the individual vectors and labels (not recommended)
+# torch.save(oh_labels, 'oh_labels.pt')
+# torch.save(images, 'images.pt')
+
+# Save model (if desired)
+torch.save(masked_ds, "masked_v2.pt")
 
 # Check if normalized
 data_loader = DataLoader(masked_ds, batch_size=6000)

@@ -3,9 +3,11 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
+import torchvision.models as models
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from baseline_model import Baseline
+from resnet import get_resnet
 from mask_dataset import MaskDataSet
 import argparse
 
@@ -18,32 +20,26 @@ def load_data(batch_size, td, tl, vd, vl):
     return train_loader, val_loader
 
 
-def load_model(lr, model_type):
+def load_model(lr, model_type, loss_fnc_type="mse"):
     model = Baseline()
     if model_type == "resnet":
-        pass
-        # model = resnet()
+        model = get_resnet()
+
     loss_fnc = nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    if loss_fnc_type != "mse":
+        loss_fnc = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     return model, loss_fnc, optimizer
 
 
-def accuracy(predict, label):
-    # refactor to use matrix math for speed
-
-    total_corr = 0
-    for i in range(len(predict)):
-        this_pred = predict[i].detach().numpy()
-        this_label = label[i].detach().numpy()
-        pred_max = np.argmax(this_pred)
-
-        if this_label[pred_max] == 1:
-            total_corr = total_corr + 1
-
+def accuracy(predict, label, loss_fnc_type):
+    predict = torch.argmax(predict, dim=1).detach().numpy()
+    label = torch.argmax(label, dim=1).detach().numpy()
+    total_corr = np.sum(predict == label)
     return total_corr / len(predict)
 
 
-def evaluate(model, val_loader, loss_fnc):
+def evaluate(model, val_loader, loss_fnc, loss_fnc_type):
     total_corr = 0
     total = 0
     nbatch = 0
@@ -53,9 +49,9 @@ def evaluate(model, val_loader, loss_fnc):
         if nbatch + 1 == len(val_loader):
             break
         predict = model(img)
-        loss = loss_fnc(input=predict, target=label)
+        loss = get_loss(predict, label, loss_fnc_type, loss_fnc)
         total_loss = total_loss + loss.item()
-        total_corr = total_corr + accuracy(predict, label) * len(predict)
+        total_corr = total_corr + accuracy(predict, label, loss_fnc_type) * len(predict)
         total = total + len(predict)
         nbatch = nbatch + 1
 
@@ -67,16 +63,21 @@ def test_eval(model, loss_fnc, testd, testl):
     total = 0
     total_loss = 0
 
-    for i in range(len(testd)):
-        total = total + 1
-        predict = model(testd[i].unsqueeze(0)).squeeze(0)
+    for i, test in enumerate(testd):
+        total += 1
+        predict = model(test.unsqueeze(0)).squeeze(0)
         label = testl[i]
-        if label[np.argmax(predict.detach().numpy())] == 1:
-            total_corr = total_corr + 1
-        total_loss = total_loss + loss_fnc(predict, label).item()
+
+        total_loss += loss_fnc(predict, torch.argmax(label))
+        total_corr += 1 if torch.argmax(label) == torch.argmax(predict) else 0
 
     return total_corr / total, total_loss / total
 
+
+def get_loss(input, target, loss_fnc_type, loss_fnc):
+    if loss_fnc_type != "mse":
+        target = torch.argmax(target, dim=1)
+    return loss_fnc(input=input, target=target)
 
 def main(args):
     # Hyperparameters
@@ -85,11 +86,25 @@ def main(args):
     bs = args.batch_size
     seed = args.seed
     model_type = args.model_type
+    loss_fnc_type = args.loss_fnc_type
+    load_test_model = args.load_test_model
 
-    # 70, 10, 20 train,validation,test split
+    # 70, 10, 20 train, validation, test split
     # This is probably not the best way to do this but it was the quickest to get working
-    images = torch.load('images.pt')
-    oh_labels = torch.load('oh_labels.pt')
+    dataset = torch.load('full_ds.pt')
+    data_loader = DataLoader(dataset, batch_size=len(dataset))
+    images = None
+    oh_labels = None
+    for image_batch, label_batch in data_loader:
+        images = image_batch
+        oh_labels = label_batch
+
+    print(images.shape)
+    print(oh_labels.shape)
+
+    # Can uncomment below if you want to use the stores pytorch tensors
+    # images = torch.load('images.pt')
+    # oh_labels = torch.load('oh_labels.pt')
 
     td, tvd, tl, tvl = train_test_split(images, oh_labels, test_size=0.3, random_state=0)
     vd, testd, vl, testl = train_test_split(tvd, tvl, test_size=float(2 / 3), random_state=0)
@@ -98,7 +113,7 @@ def main(args):
     torch.manual_seed(seed)
 
     # Initialize model, loss_fnc, optimizer
-    model, loss_fnc, optimizer = load_model(lr, model_type)
+    model, loss_fnc, optimizer = load_model(lr, model_type, loss_fnc_type)
     e = 0
 
     # Initialize data loader
@@ -116,56 +131,63 @@ def main(args):
     # Time
     start_time = time()
     for i in range(nepochs):
+        model.train()
+        print(i)
         for img, label in train_iter:
             optimizer.zero_grad()
             predict = model(img)
-            loss = loss_fnc(input=predict, target=label)
+            loss = get_loss(predict, label, loss_fnc_type, loss_fnc)
             loss.backward()
             optimizer.step()
             # Track training loss and accuracy throughout
             templossRec.append(loss.item())
-            tempaccRec.append(accuracy(predict, label))
-        print(i)
+            tempaccRec.append(accuracy(predict, label, loss_fnc_type))
 
         tlossRec.append(sum(templossRec) / len(templossRec))
         taccRec.append(sum(tempaccRec) / len(tempaccRec))
         model.eval()
-        vacc, vloss = evaluate(model, val_iter, loss_fnc)
+        vacc, vloss = evaluate(model, val_iter, loss_fnc, loss_fnc_type)
         vaccRec.append(vacc)
         vlossRec.append(vloss)
-        model.train()
         eRec.append(e)
         e = e + 1
         templossRec = []
         tempaccRec = []
 
     stop_time = time()
-    print("Total time:", stop_time - start_time)
-    print("Final training accuracy: ", taccRec[-1])
-    print("Final validation accuracy: ", vaccRec[-1])
-    print("Final training loss: ", tlossRec[-1])
-    print("Final validation loss: ", vlossRec[-1])
+    if nepochs > 0:
+        print("Total time:", stop_time - start_time)
+        print("Final training accuracy: ", taccRec[-1])
+        print("Final validation accuracy: ", vaccRec[-1])
+        print("Final training loss: ", tlossRec[-1])
+        print("Final validation loss: ", vlossRec[-1])
 
-    plt.plot(eRec, taccRec, color='red')
-    plt.plot(eRec, vaccRec, color='blue')
-    plt.title('Accuracy (nEp:{}, L_r:{}, batch:{}, seed:{})'.format(nepochs, lr, bs, seed))
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.legend(['Training', 'Validation'])
+        plt.plot(eRec, taccRec, color='red')
+        plt.plot(eRec, vaccRec, color='blue')
+        plt.title('Accuracy (nEp:{}, L_r:{}, batch:{}, seed:{})'.format(nepochs, lr, bs, seed))
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.legend(['Training', 'Validation'])
+        plt.show()
 
-    plt.plot(eRec, tlossRec, color='red')
-    plt.plot(eRec, vlossRec, color='blue')
-    plt.title('Loss (nEp:{}, L_r:{}, batch:{}, seed:{})'.format(nepochs, lr, bs, seed))
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend(['Training', 'Validation'])
+        plt.plot(eRec, tlossRec, color='red')
+        plt.plot(eRec, vlossRec, color='blue')
+        plt.title('Loss (nEp:{}, L_r:{}, batch:{}, seed:{})'.format(nepochs, lr, bs, seed))
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend(['Training', 'Validation'])
+        plt.show()
+
+    if load_test_model:
+        model = torch.load('../trained_models/resnet_full.pt2')
+        model.eval()
 
     testacc, testloss = test_eval(model, loss_fnc, testd, testl)
 
     print("Test accuracy:", testacc, "\n")
     print("Test loss:", testloss)
 
-    torch.save(model, 'baseline_maskless.pt2')
+    torch.save(model, '../trained_models/resnet_full.pt2')
 
 
 if __name__ == '__main__':
@@ -175,8 +197,10 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=25)
     parser.add_argument('--model-type', type=str, default='baseline',
                         help="Model type: baseline, resnet (Default: baseline)")
+    parser.add_argument('--loss-fnc-type', type=str, default="mse")
     parser.add_argument('--overfit', type=bool, default=False)
     parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--load-test-model', type=bool, default=False)
 
     args = parser.parse_args()
     main(args)
